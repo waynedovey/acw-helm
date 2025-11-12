@@ -32,10 +32,15 @@ aws:
 dns:
   routingStrategy: loadbalanced
   loadBalancing:
-    geo: 
-      defaultGeo: US
+    geo:
+      code: ""       # e.g., "JP" or "KR" per cluster
+      default: false # exactly ONE cluster must set true
     weighted:
-      defaultWeight: 120 
+      defaultWeight: 120
+  healthCheck:
+    path: /health
+    interval: 1m
+    failureThreshold: 3
 
 registry:
   password:

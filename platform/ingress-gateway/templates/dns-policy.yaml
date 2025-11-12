@@ -1,12 +1,40 @@
 apiVersion: kuadrant.io/v1
 kind: DNSPolicy
 metadata:
-  name: prod-web-dnspolicy
+  name: {{ include "ingress-gateway.name" . }}-dnspolicy
   namespace: ingress-gateway
 spec:
   targetRef:
-    name: prod-web
     group: gateway.networking.k8s.io
     kind: Gateway
+    name: {{ include "ingress-gateway.name" . }}
+    # attach to your existing listener (e.g. "api")
+    sectionName: {{ .Values.gateway.name | default "api" }}
   providerRefs:
-  - name: prod-web-aws-credentials
+  - name: {{ include "ingress-gateway.name" . }}-aws-credentials
+
+  {{- if eq (.Values.dns.routingStrategy | default "loadbalanced") "loadbalanced" }}
+  loadBalancing:
+    {{- with .Values.dns.loadBalancing }}
+    {{- with .weighted }}
+    {{- if .defaultWeight }}
+    weight: {{ .defaultWeight }}
+    {{- end }}
+    {{- end }}
+    {{- with .geo }}
+    {{- if .code }}
+    geo: {{ .code }}
+    {{- end }}
+    {{- if (hasKey . "default") }}
+    defaultGeo: {{ .default | default false }}
+    {{- end }}
+    {{- end }}
+    {{- end }}
+  {{- end }}
+
+  {{- with .Values.dns.healthCheck }}
+  healthCheck:
+    {{- if .path }}path: {{ .path }}{{- end }}
+    {{- if .interval }}interval: {{ .interval }}{{- end }}
+    {{- if .failureThreshold }}failureThreshold: {{ .failureThreshold }}{{- end }}
+  {{- end }}
